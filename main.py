@@ -42,7 +42,7 @@ def showSignUp():
         _lname = form.inputLastName.data
         _email = form.inputEmail.data
         _password = form.inputPassword.data
-        if(db.session.query(models.User).filter_by(email=_email).count() == 0):
+        if (db.session.query(models.User).filter_by(email=_email).count() == 0):
         #user = {'fname':_fname, 'lname':_lname, 'email':_email, 'password':_password}
             user = models.User(first_name = _fname, last_name = _lname, email = _email)
             user.set_password(_password)
@@ -50,9 +50,9 @@ def showSignUp():
             db.session.commit()
             return render_template('signUpSuccess.html', user = user)
         else:
-            flash('Email {} is already exsits!'.format(_email))
+            flash(f'Email {_email} is already exsits!')
             return render_template("signup.html", form = form)
-        
+
     #return render_template('signup.html')
     print("Not validate on submit")
     return render_template('signup.html', form = form)
@@ -66,26 +66,21 @@ def signIn():
         _password = form.inputPassword.data
 
         user = db.session.query(models.User).filter_by(email=_email).first()
-        if(user is None):
-            flash('Wrong email address or password!')
+        if user is not None and (user.check_password(_password)):
+            session['user'] = user.user_id
+            #return render_template('userhome.html')
+            return redirect('/userHome')
         else:
-            if (user.check_password(_password)):
-                session['user'] = user.user_id
-                #return render_template('userhome.html')
-                return redirect('/userHome')
-            else:
-                flash('Wrong email address or password!')
+            flash('Wrong email address or password!')
 
     return render_template('signin.html', form = form)
 
 @app.route('/userHome', methods=['GET', 'POST'])
 def userHome():
-    _user_id = session.get('user')
-    if _user_id:
-        user = db.session.query(models.User).filter_by(user_id=_user_id).first()
-        return render_template('userhome.html', user = user)
-    else:
+    if not (_user_id := session.get('user')):
         return redirect('/')
+    user = db.session.query(models.User).filter_by(user_id=_user_id).first()
+    return render_template('userhome.html', user = user)
     
 @app.route('/newTask', methods=['GET', 'POST'])
 def newTask():
@@ -118,16 +113,14 @@ def newTask():
 
 @app.route('/deleteTask', methods=['GET', 'POST'])
 def deleteTask():
-    _user_id = session.get('user')
-    if _user_id:
-        _task_id = request.form['hiddenTaskId']
-        if _task_id:
+    if _user_id := session.get('user'):
+        if _task_id := request.form['hiddenTaskId']:
             task = db.session.query(models.Task).filter_by(task_id = _task_id).first()
             db.session.delete(task)
             db.session.commit()
 
             return redirect('/userHome')
-        
+
     return redirect('/')
 
 @app.route('/editTask', methods=['GET', 'POST'])
@@ -137,28 +130,25 @@ def editTask():
     form.inputPriority.choices = [(p.priority_id, p.text) for p in db.session.query(models.Priority).all()]
     if _user_id:
         user = db.session.query(models.User).filter_by(user_id=_user_id).first()
-        _task_id = request.form['hiddenTaskId']
-        if _task_id:
+        if _task_id := request.form['hiddenTaskId']:
             task = db.session.query(models.Task).filter_by(task_id = _task_id).first()
             form.inputDescription.default = task.description
             form.inputPriority.default = task.priority_id
             form.process()
             return render_template('/newtask.html', form = form, user = user, task = task)
-        
+
     return redirect('/')
 
 @app.route('/doneTask', methods=['GET', 'POST'])
 def doneTask():
-    _user_id = session.get('user')
-    if _user_id:
-        _task_id = request.form['hiddenTaskId']
-        if _task_id:
+    if _user_id := session.get('user'):
+        if _task_id := request.form['hiddenTaskId']:
             task = db.session.query(models.Task).filter_by(task_id = _task_id).first()
             task.isCompleted = True
             db.session.commit()
 
         return redirect('/userHome')
-    
+
     return redirect('/')
 
 if __name__ == '__main__':
