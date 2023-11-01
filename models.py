@@ -12,7 +12,7 @@ class User(db.Model):
     tasks = db.relationship('Task', back_populates='user')
 
     def __repr__(self):
-        return '<User full name: {} {}, email: {}>'.format(self.first_name, self.last_name, self.email)
+        return f'<User full name: {self.first_name} {self.last_name}, email: {self.email}>'
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -32,7 +32,7 @@ class Task(db.Model):
     priority = db.relationship('Priority', back_populates='tasks')
 
     def __repr__(self):
-        return '<Task: {} of user {}'.format(self.description, self.user_id)
+        return f'<Task: {self.description} of user {self.user_id}'
     
     def getPriorityClass(self):
         if (self.priority_id == 1):
@@ -51,5 +51,5 @@ class Priority(db.Model):
     tasks = db.relationship('Task', back_populates='priority')
 
     def __repr__(self):
-        return '<Priority: {} with {}>'.format(self.priority_id, self.text)
+        return f'<Priority: {self.priority_id} with {self.text}>'
 
